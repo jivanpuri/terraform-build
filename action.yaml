@@ -36,18 +36,11 @@ runs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
 
-    # change directory to src
-    - run: cd src
-      shell: bash
-
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init -input=false
-      shell: bash
-
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      run: terraform fmt -check -recursive
+      run: |
+        cd src
+        terraform init -input=false
       shell: bash
 
     # check if environment specific file exists
@@ -60,10 +53,14 @@ runs:
     # Generates an execution plan for Terraform
     - name: Terraform Plan with env
       if: steps.check_files.outputs.files_exists == 'true'
-      run: terraform plan -input=false -var-file="../env/${{ inputs.env }}/terraform.tfvars"
+      run: |
+        cd src
+        terraform plan -input=false -var-file="../env/${{ inputs.env }}/terraform.tfvars"
       shell: bash
 
     - name: Terraform Plan
       if: steps.check_files.outputs.files_exists == 'false'
-      run: terraform plan -input=false
+      run: |
+        cd src
+        terraform plan -input=false
       shell: bash
