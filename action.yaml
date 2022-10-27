@@ -50,6 +50,7 @@ runs:
         cd src
         terraform fmt -check -recursive
       shell: bash
+      continue-on-error: true
       
     - name: Post Format
       if: always() && github.ref != 'refs/heads/${{ inputs.branch }}' && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure')
