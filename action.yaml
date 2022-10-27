@@ -16,9 +16,6 @@ inputs:
 
 runs:
   using: "composite"
-  defaults:
-    run:
-      shell: bash
 
   steps:
     - run: echo Executing against ${{ inputs.branch }} branch.
@@ -63,6 +60,7 @@ runs:
       run: |
         cd src
         terraform init
+      shell: bash
 
     - name: Post Init
       if: always() && github.ref != 'refs/heads/${{ inputs.branch }}' && (steps.init.outcome == 'success' || steps.init.outcome == 'failure')
@@ -78,15 +76,7 @@ runs:
       if: steps.check_files.outputs.files_exists == 'true'
       run: |
         cd src
-        terraform plan -input=false -var-file="../env/${{ inputs.env }}/terraform.tfvars"
-      shell: bash
-
-    - name: Terraform Plan
-      id: plan
-      if: steps.check_files.outputs.files_exists == 'false'
-      run: |
-        cd src
-        terraform plan -input=false
+        terraform plan -input=false -var-file="../env/${{ inputs.env }}/${{ inputs.region }}/terraform.tfvars"
       shell: bash
       
     - name: Post Plan - ${{ matrix['workspace'] }}
