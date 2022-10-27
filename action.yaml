@@ -31,22 +31,46 @@ runs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
 
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: |
-        cd src
-        terraform init -input=false
-      shell: bash
-
     # check if environment specific file exists
     - name: Check file existence
       id: check_files
       uses: andstor/file-existence-action@v1
       with:
         files: "../env/${{ inputs.env }}/terraform.tfvars"
+        
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Format
+      id: fmt
+      run: |
+        cd src
+        terraform fmt -check -recursive
+      shell: bash
+      
+    - name: Post Format
+      if: always() && github.ref != 'refs/heads/${{ inputs.branch }}' && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure')
+      uses: robburger/terraform-pr-commenter@v1
+      with:
+        commenter_type: fmt
+        commenter_input: ${{ format('{0}{1}', steps.fmt.outputs.stdout, steps.fmt.outputs.stderr) }}
+        commenter_exitcode: ${{ steps.fmt.outputs.exitcode }}
+        
+    - name: Terraform Init
+      id: init
+      run: |
+        cd src
+        terraform init
+
+    - name: Post Init
+      if: always() && github.ref != 'refs/heads/${{ inputs.branch }}' && (steps.init.outcome == 'success' || steps.init.outcome == 'failure')
+      uses: robburger/terraform-pr-commenter@v1
+      with:
+        commenter_type: init
+        commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
+        commenter_exitcode: ${{ steps.init.outputs.exitcode }}
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan with env
+      id: plan
       if: steps.check_files.outputs.files_exists == 'true'
       run: |
         cd src
@@ -54,8 +78,17 @@ runs:
       shell: bash
 
     - name: Terraform Plan
+      id: plan
       if: steps.check_files.outputs.files_exists == 'false'
       run: |
         cd src
         terraform plan -input=false
       shell: bash
+      
+    - name: Post Plan - ${{ matrix['workspace'] }}
+      if: always() && github.ref != 'refs/heads/${{ inputs.branch }}' && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure')
+      uses: robburger/terraform-pr-commenter@v1
+      with:
+        commenter_type: plan
+        commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+        commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
