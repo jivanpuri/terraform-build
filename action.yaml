@@ -16,6 +16,10 @@ inputs:
 
 runs:
   using: "composite"
+  defaults:
+    run:
+      shell: bash
+
   steps:
     - run: echo Executing against ${{ inputs.branch }} branch.
       shell: bash
