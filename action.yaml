@@ -13,6 +13,10 @@ inputs:
     description: 'Name of the environment'
     required: false
     default: 'prod'
+  env:
+    description: 'Name of the region'
+    required: false
+    default: 'us-central1'
 
 runs:
   using: "composite"
